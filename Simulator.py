@@ -1,42 +1,91 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Base de datos de parámetros de los aviones según el EUROCONTROL BADA
-# Los valores extraídos corresponden a las columnas del B767-300ER y A320-212.
 AIRCRAFT_PARAMS = {
     'B767-300ER': {
-        'MLW': 145150.0,  # kg (0.145150E+03 tons * 1000)
-        'S': 283.50,  # m^2 (0.28350E+03)
-        'CD0_clean': 0.017400,  # (0.17400E-01)
-        'CD2_clean': 0.045900,  # (0.45900E-01)
-        'CD0_app': 0.014000,  # (0.14000E-01)
-        'CD2_app': 0.049000,  # (0.49000E-01)
-        'hp_desc': 26418,  # ft
-        'CT_desc_high': 0.064359,  # (0.64359E-1)
-        'CT_desc_low': 0.055988,  # (0.55988E-1)
-        'CT_desc_app': 0.12475,  # (0.12475)
-        'CT1': 351670.0,  # N (0.35167E+06)
-        'CT2': 44673.0,  # ft (0.44673E+05)
-        'CT3': 1.0129e-10,  # 1/ft^2 (0.10129E-09)
-        'CF1': 0.54005,  # kg/(min*kN) (0.54005E+00)
-        'CF2': 557.82  # kt (0.55782E+03)
+        'MLW': 145150, #  kg (0.145150E+03 tons * 1000)
+        'S': 283.5,
+        'CD0_app': 0.014,
+        'CD2_app': 0.049,
+        'CD0_clean': 0.0174,
+        'CD2_clean': 0.0459,
+        'hp_desc': 26418,  #  ft
+        'CT_desc_high': 0.064359,
+        'CT_desc_low': 0.055988,
+        'CT_desc_app': 0.12475,
+        'CT1': 351670, # N
+        'CT2': 44673, # ft
+        'CT3': 1.0129e-10,  # 1/ft^2
+        'CF1': 0.54005,  # kg/(min*kN)
+        'CF2': 557.82  # kt
+    },
+    'B777-300': {
+        'MLW': 237680.0, # en kg (0.64500E+02 tons * 1000)
+        'S': 299.3,
+        'CD0_app': 0.0173,
+        'CD2_app': 0.0484,
+        'CD0_clean': 0.0157,
+        'CD2_clean': 0.042,
+        'hp_desc': 36122,  # en ft
+        'CT_desc_high': 0.044239,
+        'CT_desc_low': 0.041065,
+        'CT_desc_app': 0.092921,
+        'CT1': 425770,  # N
+        'CT2': 48987,  # ft
+        'CT3': 0.66146e-10,  # 1/ft^2
+        'CF1': 0.87843,  # kg/(min*kN)
+        'CF2': 3689.7  # kt
+    },
+    'B737': {
+        'MLW': 51710,  # kg (0.64500E+02 tons * 1000)
+        'S': 124.65,  # m^2
+        'CD0_app': 0.027,
+        'CD2_app': 0.0441,
+        'CD0_clean': 0.0235,
+        'CD2_clean': 0.0445,
+        'hp_desc': 30152,  # ft
+        'CT_desc_high': 0.036336,
+        'CT_desc_low': 0.053395,
+        'CT_desc_app': 0.1644,
+        'CT1': 145730,  # N
+        'CT2': 55638,  # ft
+        'CT3': 0.142e-10,  # 1/ft^2
+        'CF1': 0.9468,  # kg/(min*kN)
+        'CF2': .10000e15  # kt
     },
     'A320-212': {
         'MLW': 64500.0,  # kg (0.64500E+02 tons * 1000)
-        'S': 122.60,  # m^2 (0.12260E+03)
-        'CD0_clean': 0.024000,  # (0.24000E-01)
-        'CD2_clean': 0.037500,  # (0.37500E-01)
-        'CD0_app': 0.024200,  # (0.24200E-01)
-        'CD2_app': 0.046900,  # (0.46900E-01)
+        'S': 122.60,  # m^2
+        'CD0_app': 0.0242,
+        'CD2_app': 0.0469,
+        'CD0_clean': 0.024,
+        'CD2_clean': 0.0375,
         'hp_desc': 12398,  # ft
-        'CT_desc_high': 0.045711,  # (0.45711E-1)
-        'CT_desc_low': 0.027207,  # (0.27207E-1)
-        'CT_desc_app': 0.13981,  # (0.13981)
-        'CT1': 136050.0,  # N (0.13605E+06)
-        'CT2': 52238.0,  # ft (0.52238E+05)
-        'CT3': 2.6637e-10,  # 1/ft^2 (0.26637E-10)
-        'CF1': 0.94000,  # kg/(min*kN) (0.94000E+00)
-        'CF2': 100000.0  # kt (0.10000E+06)
+        'CT_desc_high': 0.045711,
+        'CT_desc_low': 0.027207,
+        'CT_desc_app': 0.13981,
+        'CT1': 136050,  # N
+        'CT2': 52238,  # ft
+        'CT3': 0.26637e-10,  # 1/ft^2
+        'CF1': 0.94,  # kg/(min*kN)
+        'CF2': 100000 # kt
+    },
+    'A319-131': {
+        'MLW': 61000,  # kg (0.64500E+02 tons * 1000)
+        'S': 122.6,  # m^2
+        'CD0_app': 0.0284,
+        'CD2_app': 0.0376,
+        'CD0_clean': 0.028,
+        'CD2_clean': 0.031,
+        'hp_desc': 27726,  # ft
+        'CT_desc_high': 0.083084,
+        'CT_desc_low': 0.051765,
+        'CT_desc_app': 0.14767,
+        'CT1': 139000,  # N
+        'CT2': 58900,  # ft
+        'CT3': 0.572e-14,  # 1/ft^2
+        'CF1': 0.688,  # kg/(min*kN)
+        'CF2': 1670  # kt
     }
 }
 
@@ -113,12 +162,17 @@ def getCDO(aircraft_model, MLW_percent):
 if __name__ == "__main__":
     plt.figure(figsize=(12, 6))
 
-    # Generar todas las trayectorias iterando combinaciones sin solicitar inputs al usuario
     scenarios = [
         ('B767-300ER', 100),
         ('B767-300ER', 80),
+        ('B777-300',100),
+        ('B777-300', 80),
+        ('B737', 100),
+        ('B737', 80),
         ('A320-212', 100),
-        ('A320-212', 80)
+        ('A320-212', 80),
+        ('A319-131', 100),
+        ('A319-131', 80)
     ]
 
     for model, mlw in scenarios:
