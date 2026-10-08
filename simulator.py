@@ -140,3 +140,88 @@ def getCDO(aircraft_model, MLW_percent, initial_h_ft=5000.0):
         t_traj.append(t_current)
         
     return [x_traj, h_traj, t_traj]
+
+def h_at_waypoints():
+    x_traj_767, h_traj_767, t_traj_767 = getCDO("B767-300ER", 100)
+    x_traj_777, h_traj_777, t_traj_777 = getCDO("B777-300", 100)
+    x_traj_737, h_traj_737, t_traj_737 = getCDO("B737", 100)
+    x_traj_a320, h_traj_a320, t_traj_a320 = getCDO("A320-212", 100)
+    x_traj_a319, h_traj_a319, t_traj_a319 = getCDO("A319-131", 100)
+
+    x_traj_767_80, h_traj_767_80, t_traj_767_80 = getCDO("B767-300ER", 80)
+    x_traj_777_80, h_traj_777_80, t_traj_777_80 = getCDO("B777-300", 80)
+    x_traj_737_80, h_traj_737_80, t_traj_737_80 = getCDO("B737", 80)
+    x_traj_a320_80, h_traj_a320_80, t_traj_a320_80 = getCDO("A320-212", 80)
+    x_traj_a319_80, h_traj_a319_80, t_traj_a319_80 = getCDO("A319-131", 80)
+
+    waypoints = [129_084.40,92_970.40,51_485.60,32_039.60,19_260.80,0.00,164_087.20,88_155.20,50_930.00,
+                 18_520.00,0.00,151_308.40,83_340.00,18_520.00,0.00,178_347.60,138_900.00,90_192.40,50_930.00,
+                 18_520.00,0.00,190_015.20,137_048.00,90_192.40,50_930.00,18_520.00,0.00,94_452.00,72_598.40,
+                 46_300.00,35_373.20,19_260.80,0.00]
+
+    with open("waypoints.csv", "w") as f:
+        f.write("Waypoint,Distance [m],B767-300ER (100%),B777-300 (100%),B737 (100%),A320-212 (100%),A319-131 (100%),B767-300ER (80%),B777-300 (80%),B737 (80%),A320-212 (80%),A319-131 (80%)\n")
+        for i in range(len(waypoints)):
+            f.write(",,")
+
+            aux1 = 0
+            for j in range(len(x_traj_767)-1):
+                if (x_traj_767[j] <= waypoints[i] and x_traj_767[j+1] > waypoints[i]):
+                    aux1 = j
+                    break
+
+            aux2 = 0
+            for j in range(len(x_traj_777)-1):
+                if (x_traj_777[j] <= waypoints[i] and x_traj_777[j+1] > waypoints[i]):
+                    aux2 = j
+                    break
+
+            aux3 = 0
+            for j in range(len(x_traj_737)-1):
+                if (x_traj_737[j] <= waypoints[i] and x_traj_737[j+1] > waypoints[i]):
+                    aux3 = j
+                    break
+
+            aux4 = 0
+            for j in range(len(x_traj_a320)-1):
+                if (x_traj_a320[j] <= waypoints[i] and x_traj_a320[j+1] > waypoints[i]):
+                    aux4 = j
+                    break
+    
+            aux5 = 0
+            for j in range(len(x_traj_a319)-1):
+                if (x_traj_a319[j] <= waypoints[i] and x_traj_a319[j+1] > waypoints[i]):
+                    aux5 = j
+                    break
+
+            aux6 = 0
+            for j in range(len(x_traj_767_80)-1):
+                if (x_traj_767_80[j] <= waypoints[i] and x_traj_767_80[j+1] > waypoints[i]):
+                    aux6 = j
+                    break
+
+            aux7 = 0
+            for j in range(len(x_traj_777_80)-1):
+                if (x_traj_777_80[j] <= waypoints[i] and x_traj_777_80[j+1] > waypoints[i]):
+                    aux7 = j
+                    break
+    
+            aux8 = 0
+            for j in range(len(x_traj_737_80)-1):
+                if (x_traj_737_80[j] <= waypoints[i] and x_traj_737_80[j+1] > waypoints[i]):
+                    aux8 = j
+                    break
+
+            aux9 = 0
+            for j in range(len(x_traj_a320_80)-1):
+                if (x_traj_a320_80[j] <= waypoints[i] and x_traj_a320_80[j+1] > waypoints[i]):
+                    aux9 = j
+                    break
+
+            aux10 = 0
+            for j in range(len(x_traj_a319_80)-1):
+                if (x_traj_a319_80[j] <= waypoints[i] and x_traj_a319_80[j+1] > waypoints[i]):
+                    aux10 = j
+                    break
+
+            f.write(f"{h_traj_767[aux1]},{h_traj_777[aux2]},{h_traj_737[aux3]},{h_traj_a320[aux4]},{h_traj_a319[aux5]},{h_traj_767_80[aux6]},{h_traj_777_80[aux7]},{h_traj_737_80[aux8]},{h_traj_a320_80[aux9]},{h_traj_a319_80[aux10]}\n")

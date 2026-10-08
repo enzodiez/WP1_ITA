@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from simulator import getCDO
+from simulator import getCDO, h_at_waypoints
 
 Aircrafts = ["B767-300ER", "B777-300", "B737", "A320-212", "A319-131"]
 Colors = ["sandybrown", "mediumseagreen", "darkcyan", "darkorchid", "hotpink", 
@@ -57,3 +57,5 @@ plt.grid(True, linestyle='--')
 
 # Mostramos ambos gráficos de forma independiente
 plt.show()
+
+h_at_waypoints()
