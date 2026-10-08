@@ -1,139 +1,142 @@
-import matplotlib.pyplot as plt
-import numpy as np
+import math
 
-# Base de datos de parámetros de los aviones según el EUROCONTROL BADA
-# Los valores extraídos corresponden a las columnas del B767-300ER y A320-212.
+# CONSTANTES OFICIALES ISA Y FÍSICAS
+g0 = 9.80665     # Gravedad estándar exacta (m/s^2)
+R = 287.04       # Constante de gases ideales del aire (m^2/K s^2)
+T0 = 288.15      # Temperatura estándar a nivel del mar (K)
+p0 = 101325      # Presión estándar a nivel del mar (Pa)
+delta_t = 1.0    # Paso de tiempo (1 segundo)
+
 AIRCRAFT_PARAMS = {
     'B767-300ER': {
-        'MLW': 145150.0,  # kg (0.145150E+03 tons * 1000)
-        'S': 283.50,  # m^2 (0.28350E+03)
-        'CD0_clean': 0.017400,  # (0.17400E-01)
-        'CD2_clean': 0.045900,  # (0.45900E-01)
-        'CD0_app': 0.014000,  # (0.14000E-01)
-        'CD2_app': 0.049000,  # (0.49000E-01)
-        'hp_desc': 26418,  # ft
-        'CT_desc_high': 0.064359,  # (0.64359E-1)
-        'CT_desc_low': 0.055988,  # (0.55988E-1)
-        'CT_desc_app': 0.12475,  # (0.12475)
-        'CT1': 351670.0,  # N (0.35167E+06)
-        'CT2': 44673.0,  # ft (0.44673E+05)
-        'CT3': 1.0129e-10,  # 1/ft^2 (0.10129E-09)
-        'CF1': 0.54005,  # kg/(min*kN) (0.54005E+00)
-        'CF2': 557.82  # kt (0.55782E+03)
+        'MLW': 145.150e3, 'S': 283.50, 'CD0_app': 0.014, 'CD2_app': 0.049,
+        'CD0_clean': 0.0174, 'CD2_clean': 0.0459, 'hp_desc': 26418,
+        'CT_desc_high': 0.064359, 'CT_desc_low': 0.055988, 'CT_desc_app': 0.12475,
+        'CT1': 351670.0, 'CT2': 44673.0, 'CT3': 0.10129E-09,
+        'CF1': 0.54005, 'CF2': 557.82
+    },
+    'B777-300': {
+        'MLW': 237.680e3, 'S': 428.04, 'CD0_app': 0.0173, 'CD2_app': 0.0484,
+        'CD0_clean': 0.0157, 'CD2_clean': 0.0420, 'hp_desc': 36122,
+        'CT_desc_high': 0.044239, 'CT_desc_low': 0.041065, 'CT_desc_app': 0.092921,
+        'CT1': 425770.0, 'CT2': 48987.0, 'CT3': 0.66146E-10,
+        'CF1': 0.87843, 'CF2': 3689.7
+    },
+    'B737': {
+        'MLW': 51.710e3, 'S': 124.65, 'CD0_app': 0.0270, 'CD2_app': 0.0441,
+        'CD0_clean': 0.0235, 'CD2_clean': 0.0445, 'hp_desc': 30152,
+        'CT_desc_high': 0.036336, 'CT_desc_low': 0.053395, 'CT_desc_app': 0.16440,
+        'CT1': 145730.0, 'CT2': 55638.0, 'CT3': 0.14200E-10,
+        'CF1': 0.94680, 'CF2': 100000.0
     },
     'A320-212': {
-        'MLW': 64500.0,  # kg (0.64500E+02 tons * 1000)
-        'S': 122.60,  # m^2 (0.12260E+03)
-        'CD0_clean': 0.024000,  # (0.24000E-01)
-        'CD2_clean': 0.037500,  # (0.37500E-01)
-        'CD0_app': 0.024200,  # (0.24200E-01)
-        'CD2_app': 0.046900,  # (0.46900E-01)
-        'hp_desc': 12398,  # ft
-        'CT_desc_high': 0.045711,  # (0.45711E-1)
-        'CT_desc_low': 0.027207,  # (0.27207E-1)
-        'CT_desc_app': 0.13981,  # (0.13981)
-        'CT1': 136050.0,  # N (0.13605E+06)
-        'CT2': 52238.0,  # ft (0.52238E+05)
-        'CT3': 2.6637e-10,  # 1/ft^2 (0.26637E-10)
-        'CF1': 0.94000,  # kg/(min*kN) (0.94000E+00)
-        'CF2': 100000.0  # kt (0.10000E+06)
+        'MLW': 64.500e3, 'S': 122.60, 'CD0_app': 0.0242, 'CD2_app': 0.0469,
+        'CD0_clean': 0.0240, 'CD2_clean': 0.0375, 'hp_desc': 12398,
+        'CT_desc_high': 0.045711, 'CT_desc_low': 0.027207, 'CT_desc_app': 0.13981,
+        'CT1': 136050.0, 'CT2': 52238.0, 'CT3': 0.26637E-10,
+        'CF1': 0.94000, 'CF2': 100000.0
+    },
+    'A319-131': {
+        'MLW': 61.000e3, 'S': 122.60, 'CD0_app': 0.0284, 'CD2_app': 0.0376,
+        'CD0_clean': 0.0280, 'CD2_clean': 0.31000E-01, 'hp_desc': 27726,
+        'CT_desc_high': 0.083084, 'CT_desc_low': 0.051765, 'CT_desc_app': 0.14767,
+        'CT1': 139000.0, 'CT2': 58900.0, 'CT3': 0.57200E-14,
+        'CF1': 0.68800, 'CF2': 1670.0
     }
 }
 
+def density_ISA(h_m):
+    """Calcula la densidad según el documento de la ISA (Pág 2 y 5)."""
+    if h_m < 11000.0:
+        T = T0 - 0.0065 * h_m
+        P = p0 * (T / T0) ** 5.2561
+    else:
+        T = 216.65
+        p11 = 22632.0  # Pa
+        P = p11 * math.exp(-g0 * (h_m - 11000.0) / (R * T))
+    return P / (R * T)
 
-def getCDO(aircraft_model, MLW_percent):
-    """
-    Simula la trayectoria de descenso (hacia atrás) para un modelo de avión.
-    """
-    params = AIRCRAFT_PARAMS[aircraft_model]
-
-    # Condiciones iniciales de simulación hacia atrás (IAF)
-    x_current = 0.0  # Distancia inicial en metros
-    h_current = 6000.0  # Altitud inicial en ft
-    weight = params['MLW'] * (MLW_percent / 100.0)
-    delta_t = 1.0  # Iteración de 1 segundo
-
-    x_traj = [x_current]
-    h_traj = [h_current]
-
-    # Bucle iterativo hasta alcanzar FL400 (40,000 ft)
-    while h_current < 40000.0:
-        # Se asume la velocidad que minimiza la tasa de descenso (V_md)
-        # NOTA: En un modelo real, v debe calcularse usando la atmósfera estándar ISA.
-        # Para la simulación estructurada, asignaremos una velocidad constante aproximada.
-        v_kt = 250.0
-        v_ms = v_kt * 0.514444
-
-        # 1. Calcular Empuje Máximo (T_max) y de Descenso (T_desc)
-        T_max = params['CT1'] * (1 - (h_current / params['CT2']) + params['CT3'] * (h_current ** 2))
-
-        # Selección del coeficiente de empuje según altitud y fase de descenso
-        if h_current < params['hp_desc']:
+def get_thrust_descent(params, h_m):
+    """Calcula el empuje Idle de BADA garantizando las unidades correctas."""
+    h_ft = h_m / 0.3048
+    # Ecuación empírica BADA original en pies
+    T_max = params['CT1'] * (1.0 - (h_ft / params['CT2']) + params['CT3'] * (h_ft ** 2))
+    
+    if h_ft > params['hp_desc']:
+        CT_desc = params['CT_desc_high']
+    else:
+        if h_ft > 6000.0:
             CT_desc = params['CT_desc_low']
         else:
-            CT_desc = params['CT_desc_high']
+            CT_desc = params['CT_desc_app']
+            
+    return CT_desc * T_max
 
-        T_desc = CT_desc * T_max  # El empuje se asume siempre en "idle" para el descenso
+def velocity_min_rate_descent(T_desc, rho, S, CD0, CD2, weight_kg):
+    """Ecuación analítica limpia para la velocidad óptima de mínimo descenso."""
+    L = weight_kg * g0
+    termino_raiz = math.sqrt((T_desc**2 / (9.0 * CD0**2)) + (4.0 * CD2 * L**2 / (3.0 * CD0)))
+    z = ((T_desc / (3.0 * CD0)) + termino_raiz) / (rho * S)
+    return math.sqrt(z)
 
-        # 2. Coeficientes aerodinámicos (CD0 y CD2 cambian según la altitud por los flaps)
-        if h_current < 10000.0:  # Aproximación de configuración approach
-            CD0 = params['CD0_app']
-            CD2 = params['CD2_app']
-        else:
+def getCDO(aircraft_model, MLW_percent, initial_h_ft=5000.0):
+    """Simulación iterativa temporal de la trayectoria CDO hacia atrás."""
+    params = AIRCRAFT_PARAMS[aircraft_model]
+    
+    # Inicialización en el IAF (x=0, h=5000 ft según sección 2 del SoW)
+    x_current = 0.0                    
+    h_m = initial_h_ft * 0.3048        
+    weight = params['MLW'] * (MLW_percent / 100.0)  
+    t_current = 0.0                    
+    
+    x_traj = [x_current]
+    h_traj = [h_m]                     
+    t_traj = [t_current]
+    
+    h_max_m = 40000.0 * 0.3048  # FL400 en metros
+    
+    while (h_m / 0.3048) < 40000.0:
+        h_ft = h_m / 0.3048
+        rho = density_ISA(h_m)
+        T_desc = get_thrust_descent(params, h_m)
+        
+        # Transición de flaps a 6000 ft según especificación BADA
+        if h_ft > 6000.0:
             CD0 = params['CD0_clean']
             CD2 = params['CD2_clean']
-
-        # CL asumido para vuelo nivelado/descenso ligero (Sustentación = Peso)
-        # L = 0.5 * rho * v^2 * S * CL => CL = (Weight * g) / (0.5 * rho * v^2 * S)
-        # Para mantener el código autónomo sin el modelo completo de densidad ISA:
-        CL = 0.5
-        CD = CD0 + CD2 * (CL ** 2)
-
-        # 3. Consumo de Combustible (Fuel Flow)
-        eta = params['CF1'] * (1 + (v_kt / params['CF2']))
-        FF = eta * (T_desc / 1000.0)  # T_desc en kN para la fórmula
-
-
-        gamma = -0.052
-
-        dh = v_ms * np.sin(gamma) * delta_t
-        dx = v_ms * np.cos(gamma) * delta_t
-
-        h_current -= (dh * 3.28084)  # Convertir m a ft
-        x_current -= dx
-        weight += (FF / 60.0) * delta_t  # Sumamos peso hacia atrás ya que se quemó combustible
-
+        else:
+            CD0 = params['CD0_app']
+            CD2 = params['CD2_app']
+            
+        v_ms = velocity_min_rate_descent(T_desc, rho, params['S'], CD0, CD2, weight)
+        
+        # Resistencia aerodinámica
+        CL = (2 * weight * g0) / (params['S'] * (v_ms**2) * rho)
+        CD = CD0 + CD2 * (CL**2)
+        Drag = 0.5 * rho * (v_ms**2) * params['S'] * CD
+        
+        # Ángulo de planeo cinemático longitudinal
+        sin_gamma = (T_desc - Drag) / (weight * g0)
+        sin_gamma = max(-0.99, min(0.99, sin_gamma))  # Evitar singularidades verticales
+        gamma = math.asin(sin_gamma)  
+        
+        v_vert = v_ms * math.sin(gamma)  
+        v_hor = v_ms * math.cos(gamma)   
+        
+        # Integración de paso temporal inverso
+        h_m -= v_vert * delta_t          
+        x_current -= v_hor * delta_t     
+        t_current -= delta_t             
+        
+        # Consumo inverso de masa de combustible (BADA 3.10)
+        v_kt = v_ms / 0.514444           
+        T_desc_kN = T_desc / 1000.0      
+        eta = (params['CF1'] / 60.0) * (1.0 + (v_kt / params['CF2'])) 
+        fuel_flow = eta * T_desc_kN                                   
+        weight += fuel_flow * delta_t                                 
+        
         x_traj.append(x_current)
-        h_traj.append(h_current)
-
-    return x_traj, h_traj
-
-
-# Script Principal (Main)
-if __name__ == "__main__":
-    plt.figure(figsize=(12, 6))
-
-    # Generar todas las trayectorias iterando combinaciones sin solicitar inputs al usuario
-    scenarios = [
-        ('B767-300ER', 100),
-        ('B767-300ER', 80),
-        ('A320-212', 100),
-        ('A320-212', 80)
-    ]
-
-    for model, mlw in scenarios:
-        x, h = getCDO(model, mlw)
-        # Convertir ft a metros para igualar la gráfica original
-        h_meters = [alt / 3.28084 for alt in h]
-        plt.plot(x, h_meters, label=f'{model} [{mlw}% MLW]')
-
-    plt.title('Simulador de Operación de Descenso Continuo (CDO)')
-    plt.xlabel('x [m]')
-    plt.ylabel('h [m]')
-    plt.legend()
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.xlim(min(x), 0)
-    plt.ylim(0, 12500)
-
-    # Mostrar todas las trayectorias calculadas con un solo "clic"
-    plt.show()
+        h_traj.append(h_m)
+        t_traj.append(t_current)
+        
+    return [x_traj, h_traj, t_traj]
