@@ -79,11 +79,11 @@ def velocity_min_rate_descent(T_desc, rho, S, CD0, CD2, weight_kg):
     z = ((T_desc / (3.0 * CD0)) + termino_raiz) / (rho * S)
     return math.sqrt(z)
 
-def getCDO(aircraft_model, MLW_percent, initial_h_ft=5000.0):
+def getCDO(aircraft_model, MLW_percent, initial_h_ft=6000.0):
     """Simulación iterativa temporal de la trayectoria CDO hacia atrás."""
     params = AIRCRAFT_PARAMS[aircraft_model]
     
-    # Inicialización en el IAF (x=0, h=5000 ft según sección 2 del SoW)
+    # Inicialización en el IAF (x=0, h=6000 ft)
     x_current = 0.0                    
     h_m = initial_h_ft * 0.3048        
     weight = params['MLW'] * (MLW_percent / 100.0)  
@@ -93,15 +93,13 @@ def getCDO(aircraft_model, MLW_percent, initial_h_ft=5000.0):
     h_traj = [h_m]                     
     t_traj = [t_current]
     
-    h_max_m = 40000.0 * 0.3048  # FL400 en metros
-    
     while (h_m / 0.3048) < 40000.0:
         h_ft = h_m / 0.3048
         rho = density_ISA(h_m)
         T_desc = get_thrust_descent(params, h_m)
         
         # Transición de flaps a 6000 ft según especificación BADA
-        if h_ft > 6000.0:
+        if h_ft >= 6000.0:
             CD0 = params['CD0_clean']
             CD2 = params['CD2_clean']
         else:
@@ -142,86 +140,72 @@ def getCDO(aircraft_model, MLW_percent, initial_h_ft=5000.0):
     return [x_traj, h_traj, t_traj]
 
 def h_at_waypoints():
-    x_traj_767, h_traj_767, t_traj_767 = getCDO("B767-300ER", 100)
-    x_traj_777, h_traj_777, t_traj_777 = getCDO("B777-300", 100)
-    x_traj_737, h_traj_737, t_traj_737 = getCDO("B737", 100)
-    x_traj_a320, h_traj_a320, t_traj_a320 = getCDO("A320-212", 100)
-    x_traj_a319, h_traj_a319, t_traj_a319 = getCDO("A319-131", 100)
+    # 1. Ejecución de las simulaciones base (Unidades SI)
+    x_767, h_767, _ = getCDO("B767-300ER", 100)
+    x_777, h_777, _ = getCDO("B777-300", 100)
+    x_737, h_737, _ = getCDO("B737", 100)
+    x_a320, h_a320, _ = getCDO("A320-212", 100)
+    x_a319, h_a319, _ = getCDO("A319-131", 100)
 
-    x_traj_767_80, h_traj_767_80, t_traj_767_80 = getCDO("B767-300ER", 80)
-    x_traj_777_80, h_traj_777_80, t_traj_777_80 = getCDO("B777-300", 80)
-    x_traj_737_80, h_traj_737_80, t_traj_737_80 = getCDO("B737", 80)
-    x_traj_a320_80, h_traj_a320_80, t_traj_a320_80 = getCDO("A320-212", 80)
-    x_traj_a319_80, h_traj_a319_80, t_traj_a319_80 = getCDO("A319-131", 80)
+    x_767_80, h_767_80, _ = getCDO("B767-300ER", 80)
+    x_777_80, h_777_80, _ = getCDO("B777-300", 80)
+    x_737_80, h_737_80, _ = getCDO("B737", 80)
+    x_a320_80, h_a320_80, _ = getCDO("A320-212", 80)
+    x_a319_80, h_a319_80, _ = getCDO("A319-131", 80)
 
-    waypoints = [129_084.40,92_970.40,51_485.60,32_039.60,19_260.80,0.00,164_087.20,88_155.20,50_930.00,
-                 18_520.00,0.00,151_308.40,83_340.00,18_520.00,0.00,178_347.60,138_900.00,90_192.40,50_930.00,
-                 18_520.00,0.00,190_015.20,137_048.00,90_192.40,50_930.00,18_520.00,0.00,94_452.00,72_598.40,
-                 46_300.00,35_373.20,19_260.80,0.00]
+    # Nombres de los waypoints secuenciales para la salida del CSV
+    wp_names = [
+        "ALBER", "CUTXE", "UTHAN", "ENJUC", "UCREQ", "SLL",
+        "CASPE", "MECUH", "VIBOK", "BL461", "SLL",
+        "LOBAR", "PEKIS", "BL461", "SLL",
+        "MARTA", "EBROX", "RES", "VLA", "BL463", "SLL",
+        "MATEX", "SENIA", "RES", "VLA", "BL463", "SLL",
+        "PUMAL", "BERGA", "KOSIT", "MAMUK", "UCREQ", "SLL"
+    ]
 
-    with open("waypoints.csv", "w") as f:
+    waypoints = [
+        129084.40, 92970.40, 51485.60, 32039.60, 19260.80, 0.00,
+        164087.20, 88155.20, 50930.00, 18520.00, 0.00,
+        151308.40, 83340.00, 18520.00, 0.00,
+        178347.60, 138900.00, 90192.40, 50930.00, 18520.00, 0.00,
+        190015.20, 137048.00, 90192.40, 50930.00, 18520.00, 0.00,
+        94452.00, 72598.40, 46300.00, 35373.20, 19260.80, 0.00
+    ]
+
+    # Convertimos las distancias de las trayectorias a valores positivos una sola vez
+    pos_x_767 = [-x for x in x_767]
+    pos_x_777 = [-x for x in x_777]
+    pos_x_737 = [-x for x in x_737]
+    pos_x_a320 = [-x for x in x_a320]
+    pos_x_a319 = [-x for x in x_a319]
+
+    pos_x_767_80 = [-x for x in x_767_80]
+    pos_x_777_80 = [-x for x in x_777_80]
+    pos_x_737_80 = [-x for x in x_737_80]
+    pos_x_a320_80 = [-x for x in x_a320_80]
+    pos_x_a319_80 = [-x for x in x_a319_80]
+
+    with open("waypoints_altitude.csv", "w") as f:
+        # Cabecera estructurada del CSV
         f.write("Waypoint,Distance [m],B767-300ER (100%),B777-300 (100%),B737 (100%),A320-212 (100%),A319-131 (100%),B767-300ER (80%),B777-300 (80%),B737 (80%),A320-212 (80%),A319-131 (80%)\n")
+        
         for i in range(len(waypoints)):
-            f.write(",,")
-
-            aux1 = 0
-            for j in range(len(x_traj_767)-1):
-                if (x_traj_767[j] <= waypoints[i] and x_traj_767[j+1] > waypoints[i]):
-                    aux1 = j
-                    break
-
-            aux2 = 0
-            for j in range(len(x_traj_777)-1):
-                if (x_traj_777[j] <= waypoints[i] and x_traj_777[j+1] > waypoints[i]):
-                    aux2 = j
-                    break
-
-            aux3 = 0
-            for j in range(len(x_traj_737)-1):
-                if (x_traj_737[j] <= waypoints[i] and x_traj_737[j+1] > waypoints[i]):
-                    aux3 = j
-                    break
-
-            aux4 = 0
-            for j in range(len(x_traj_a320)-1):
-                if (x_traj_a320[j] <= waypoints[i] and x_traj_a320[j+1] > waypoints[i]):
-                    aux4 = j
-                    break
-    
-            aux5 = 0
-            for j in range(len(x_traj_a319)-1):
-                if (x_traj_a319[j] <= waypoints[i] and x_traj_a319[j+1] > waypoints[i]):
-                    aux5 = j
-                    break
-
-            aux6 = 0
-            for j in range(len(x_traj_767_80)-1):
-                if (x_traj_767_80[j] <= waypoints[i] and x_traj_767_80[j+1] > waypoints[i]):
-                    aux6 = j
-                    break
-
-            aux7 = 0
-            for j in range(len(x_traj_777_80)-1):
-                if (x_traj_777_80[j] <= waypoints[i] and x_traj_777_80[j+1] > waypoints[i]):
-                    aux7 = j
-                    break
-    
-            aux8 = 0
-            for j in range(len(x_traj_737_80)-1):
-                if (x_traj_737_80[j] <= waypoints[i] and x_traj_737_80[j+1] > waypoints[i]):
-                    aux8 = j
-                    break
-
-            aux9 = 0
-            for j in range(len(x_traj_a320_80)-1):
-                if (x_traj_a320_80[j] <= waypoints[i] and x_traj_a320_80[j+1] > waypoints[i]):
-                    aux9 = j
-                    break
-
-            aux10 = 0
-            for j in range(len(x_traj_a319_80)-1):
-                if (x_traj_a319_80[j] <= waypoints[i] and x_traj_a319_80[j+1] > waypoints[i]):
-                    aux10 = j
-                    break
-
-            f.write(f"{h_traj_767[aux1]},{h_traj_777[aux2]},{h_traj_737[aux3]},{h_traj_a320[aux4]},{h_traj_a319[aux5]},{h_traj_767_80[aux6]},{h_traj_777_80[aux7]},{h_traj_737_80[aux8]},{h_traj_a320_80[aux9]},{h_traj_a319_80[aux10]}\n")
+            target = waypoints[i]
+            
+            # Algoritmo de optimización por cercanía: encuentra el índice del valor más próximo
+            idx1 = min(range(len(pos_x_767)), key=lambda j: abs(pos_x_767[j] - target))
+            idx2 = min(range(len(pos_x_777)), key=lambda j: abs(pos_x_777[j] - target))
+            idx3 = min(range(len(pos_x_737)), key=lambda j: abs(pos_x_737[j] - target))
+            idx4 = min(range(len(pos_x_a320)), key=lambda j: abs(pos_x_a320[j] - target))
+            idx5 = min(range(len(pos_x_a319)), key=lambda j: abs(pos_x_a319[j] - target))
+            
+            idx6 = min(range(len(pos_x_767_80)), key=lambda j: abs(pos_x_767_80[j] - target))
+            idx7 = min(range(len(pos_x_777_80)), key=lambda j: abs(pos_x_777_80[j] - target))
+            idx8 = min(range(len(pos_x_737_80)), key=lambda j: abs(pos_x_737_80[j] - target))
+            idx9 = min(range(len(pos_x_a320_80)), key=lambda j: abs(pos_x_a320_80[j] - target))
+            idx10 = min(range(len(pos_x_a319_80)), key=lambda j: abs(pos_x_a319_80[j] - target))
+            
+            # Escritura limpia incluyendo metadatos de los puntos
+            f.write(f"{wp_names[i]},{target:.2f},"
+                    f"{h_767[idx1]:.4f},{h_777[idx2]:.4f},{h_737[idx3]:.4f},{h_a320[idx4]:.4f},{h_a319[idx5]:.4f},"
+                    f"{h_767_80[idx6]:.4f},{h_777_80[idx7]:.4f},{h_737_80[idx8]:.4f},{h_a320_80[idx9]:.4f},{h_a319_80[idx10]:.4f}\n")
