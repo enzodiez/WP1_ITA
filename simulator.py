@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timedelta
 
 # CONSTANTES OFICIALES ISA Y FÍSICAS
 g0 = 9.80665     # Gravedad estándar exacta (m/s^2)
@@ -209,3 +210,61 @@ def h_at_waypoints():
             f.write(f"{wp_names[i]},{target:.2f},"
                     f"{h_767[idx1]:.4f},{h_777[idx2]:.4f},{h_737[idx3]:.4f},{h_a320[idx4]:.4f},{h_a319[idx5]:.4f},"
                     f"{h_767_80[idx6]:.4f},{h_777_80[idx7]:.4f},{h_737_80[idx8]:.4f},{h_a320_80[idx9]:.4f},{h_a319_80[idx10]:.4f}\n")
+
+def generate_scenario_1_csv():
+    """
+    Genera el archivo 'scenario_1.csv' completando todas las columnas de la tabla 
+    del Escenario 1 según las asignaciones y distancias de la v1.2 del SoW.
+    """
+    # 1. Definición de la flota oficial de Barcelona (SoW v1.2) con sus distancias de entrada
+    scenarios_data = [
+        {'model_label': 'B767', 'full_name': 'B767-300ER', 'star': 'ALBER1Z', 'mlw_pct': 80,  'dist_entry_m': 129084.40},
+        {'model_label': 'B737', 'full_name': 'B737',       'star': 'PUMAL1Z', 'mlw_pct': 100, 'dist_entry_m': 94452.00},
+        {'model_label': 'B777', 'full_name': 'B777-300',   'star': 'MARTA3Z', 'mlw_pct': 100, 'dist_entry_m': 178347.60},
+        {'model_label': 'B767', 'full_name': 'B767-300ER', 'star': 'MATEX3Z', 'mlw_pct': 80,  'dist_entry_m': 190015.20},
+        {'model_label': 'A319', 'full_name': 'A319-131',   'star': 'LOBAR2W', 'mlw_pct': 80,  'dist_entry_m': 151308.40},
+        {'model_label': 'A320', 'full_name': 'A320-212',   'star': 'CASPE2W', 'mlw_pct': 100, 'dist_entry_m': 164087.20}
+    ]
+    
+    # Hora de entrada unificada en crucero
+    start_time = datetime.strptime("11:45:00", "%H:%M:%S")
+    
+    # 2. Extracción de datos del simulador
+    for ac in scenarios_data:
+        x_traj, h_traj, t_traj = getCDO(ac['full_name'], ac['mlw_pct'], initial_h_ft=6000.0)
+        pos_x = [-x for x in x_traj]  # Convertimos distancias a valores positivos
+        
+        # Encontramos el índice más cercano al punto de entrada (STAR entry WP)
+        idx = min(range(len(pos_x)), key=lambda j: abs(pos_x[j] - ac['dist_entry_m']))
+        
+        # Almacenamos los resultados físicos calculados
+        ac['alt_entry_m'] = h_traj[idx]
+        ac['time_to_iaf_s'] = abs(t_traj[idx])
+        ac['toa_iaf'] = start_time + timedelta(seconds=ac['time_to_iaf_s'])
+
+    # 3. SECUENCIACIÓN: Ordenamos los aviones según quién llega ANTES al IAF (ToA IAF)
+    sorted_fleet = sorted(scenarios_data, key=lambda x: x['toa_iaf'])
+    
+    # 4. Escritura del archivo CSV definitivo
+    with open("scenario_1.csv", "w") as f:
+        # Cabecera idéntica a la diapositiva de clase
+        f.write("Aircraft model,STAR,%MLW IAF,Dist. STAR entry WP to IAF [km],Alt. at STAR entry WP [m],Time from STAR entry WP to IAF [s],ToA IAF,Seq. Order,Sep. to previous at IAF [s]\n")
+        
+        for i, ac in enumerate(sorted_fleet):
+            # Calcular la separación en segundos respecto al avión anterior
+            if i == 0:
+                separation = 0  # El primer avión no tiene precedente
+            else:
+                separation = (ac['toa_iaf'] - sorted_fleet[i-1]['toa_iaf']).total_seconds()
+                
+            f.write(f"{ac['model_label']},"
+                    f"{ac['star']},"
+                    f"{ac['mlw_pct']},"
+                    f"{ac['dist_entry_m'] / 1000.0:.2f},"    # Pasamos metros a km
+                    f"{ac['alt_entry_m']:.4f},"
+                    f"{ac['time_to_iaf_s']:.1f},"
+                    f"{ac['toa_iaf'].strftime('%H:%M:%S')},"
+                    f"{i + 1},"                              # Orden secuencial (1º, 2º...)
+                    f"{separation:.0f}\n")
+                    
+    print("¡Archivo 'scenario_1.csv' generado correctamente con todos los datos calculados!")
