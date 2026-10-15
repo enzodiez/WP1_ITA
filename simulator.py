@@ -268,3 +268,54 @@ def generate_scenario_1_csv():
                     f"{separation:.0f}\n")
                     
     print("¡Archivo 'scenario_1.csv' generado correctamente con todos los datos calculados!")
+
+def generate_scenario_2_csv():
+    """
+    Genera el archivo 'scenario_2.csv' resolviendo la secuenciación ATC estricta
+    con separación fija EXACTA de 2 minutos (120s) entre cada avión en el IAF.
+    """
+    fleet_data = [
+        {'model_label': 'B767', 'full_name': 'B767-300ER', 'star': 'ALBER1Z', 'mlw_pct': 80,  'dist_entry_m': 129084.40},
+        {'model_label': 'B737', 'full_name': 'B737',       'star': 'PUMAL1Z', 'mlw_pct': 100, 'dist_entry_m': 94452.00},
+        {'model_label': 'B777', 'full_name': 'B777-300',   'star': 'MARTA3Z', 'mlw_pct': 100, 'dist_entry_m': 178347.60},
+        {'model_label': 'B767', 'full_name': 'B767-300ER', 'star': 'MATEX3Z', 'mlw_pct': 80,  'dist_entry_m': 190015.20},
+        {'model_label': 'A319', 'full_name': 'A319-131',   'star': 'LOBAR2W', 'mlw_pct': 80,  'dist_entry_m': 151308.40},
+        {'model_label': 'A320', 'full_name': 'A320-212',   'star': 'CASPE2W', 'mlw_pct': 100, 'dist_entry_m': 164087.20}
+    ]
+    
+    start_time = datetime.strptime("11:45:00", "%H:%M:%S")
+    
+    for ac in fleet_data:
+        x_traj, _, t_traj = getCDO(ac['full_name'], ac['mlw_pct'], initial_h_ft=6000.0)
+        pos_x = [-x for x in x_traj]
+        idx = min(range(len(pos_x)), key=lambda j: abs(pos_x[j] - ac['dist_entry_m']))
+        
+        ac['time_to_iaf_s'] = abs(t_traj[idx])
+        ac['toa_iaf_scen1'] = start_time + timedelta(seconds=ac['time_to_iaf_s'])
+
+    # Ordenamos la flota siguiendo la secuencia descubierta en el Escenario 1
+    sorted_fleet = sorted(fleet_data, key=lambda x: x['toa_iaf_scen1'])
+    
+    # ALGORITMO DE ESPACIADO FIJO EXACTO (Cadena secuencial rígida)
+    with open("scenario_2.csv", "w") as f:
+        f.write("Aircraft model,STAR,Weight at IAF,ToA IAF Scenario 2,Applied delay [s],ToA STAR entry WP Scenario 2\n")
+        
+        # El primer avión de la secuencia marca el origen inalterable (Retraso = 0)
+        leader_iaf_time = sorted_fleet[0]['toa_iaf_scen1']
+        
+        for i, ac in enumerate(sorted_fleet):
+            # Cada avión se posiciona en slots de exactamente i * 120 segundos
+            ac['toa_iaf_scen2'] = leader_iaf_time + timedelta(seconds=i * 120)
+            ac['applied_delay_s'] = (ac['toa_iaf_scen2'] - ac['toa_iaf_scen1']).total_seconds()
+            
+            # Hora real a la que debe cruzar el punto inicial en crucero
+            ac['toa_star_entry_scen2'] = start_time + timedelta(seconds=ac['applied_delay_s'])
+            
+            f.write(f"{ac['model_label']},"
+                    f"{ac['star']},"
+                    f"{ac['mlw_pct']}% MLW,"
+                    f"{ac['toa_iaf_scen2'].strftime('%H:%M:%S')},"
+                    f"{ac['applied_delay_s']:.0f},"
+                    f"{ac['toa_star_entry_scen2'].strftime('%H:%M:%S')}\n")
+                    
+    print("¡Archivo 'scenario_2.csv' corregido de forma estricta con espaciados fijos de 2 minutos exactos!")

@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-from simulator import getCDO, h_at_waypoints, generate_scenario_1_csv
+from simulator import getCDO, h_at_waypoints, generate_scenario_1_csv, generate_scenario_2_csv
 
 Aircrafts = ["B767-300ER", "B777-300", "B737", "A320-212", "A319-131"]
 Colors = ["sandybrown", "mediumseagreen", "darkcyan", "darkorchid", "hotpink", 
@@ -60,3 +60,4 @@ plt.show()
 
 h_at_waypoints()
 generate_scenario_1_csv()
+generate_scenario_2_csv()
