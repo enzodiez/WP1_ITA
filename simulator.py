@@ -141,7 +141,7 @@ def getCDO(aircraft_model, MLW_percent, initial_h_ft=6000.0):
     return [x_traj, h_traj, t_traj]
 
 def h_at_waypoints():
-    # 1. Ejecución de las simulaciones base (Unidades SI)
+    # Ejecución de las simulaciones base (Unidades SI)
     x_767, h_767, _ = getCDO("B767-300ER", 100)
     x_777, h_777, _ = getCDO("B777-300", 100)
     x_737, h_737, _ = getCDO("B737", 100)
