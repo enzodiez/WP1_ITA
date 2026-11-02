@@ -58,10 +58,9 @@ plt.grid(True, linestyle='--')
 
 
 # =============================================================================
-# ACTIVIDAD 4: CDO COMPLIANCE TO STAR ALTITUDE CONSTRAINTS (ANÁLISIS SECUENCIAL)
+# CDO COMPLIANCE TO STAR ALTITUDE CONSTRAINTS (ANÁLISIS SECUENCIAL)
 # =============================================================================
 
-# Diccionario de restricciones de altitud oficiales calculadas por vuestro equipo
 STAR_CONSTRAINTS = {
     'ALBER1Z': [
         {'name': 'ALBER', 'x': -129084.40, 'min': 3352.8, 'max': 7620.0},
@@ -116,7 +115,7 @@ for star_name, wps in STAR_CONSTRAINTS.items():
     # Creamos una ventana gráfica flotante limpia para la STAR actual
     plt.figure(fig_num, figsize=(10, 6))
     
-    # 1. Dibujamos las 10 trayectorias teóricas calculadas de fondo como línea base
+    # Dibujamos las 10 trayectorias teóricas calculadas de fondo como línea base
     ac_idx = 0
     while ac_idx < len(Aircrafts):
         # Configuración 100% MLW
@@ -130,7 +129,7 @@ for star_name, wps in STAR_CONSTRAINTS.items():
                  label=f"{Aircrafts[ac_idx]} (80% MLW)")
         ac_idx += 1
         
-    # 2. Dibujamos las líneas de restricción de la AIP de ENAIRE para esta ruta
+    #  Dibujamos las líneas de restricción de la AIP de ENAIRE para esta ruta
     for wp in wps:
         # Barrera vertical del Waypoint
         plt.axvline(x=wp['x'], color="gray", linestyle="-", linewidth=0.7, alpha=0.4)
@@ -148,7 +147,7 @@ for star_name, wps in STAR_CONSTRAINTS.items():
             plt.plot([wp['x'] - 16000, wp['x']], [wp['min'], wp['min']], color="royalblue", linestyle=":", linewidth=1.5)
             plt.text(wp['x'] - 15000, wp['min'] - 400, f"Min:{wp['min']:.0f}m", color="royalblue", fontsize=7, fontweight="bold")
 
-    # 3. Configuración del cuadro de visualización actual
+    #  Configuración del cuadro de visualización actual
     plt.title(f"CDO Compliance & STAR Altitude Constraints - {star_name}", fontsize=11, fontweight="bold")
     plt.xlabel("Horizontal distance to the IAF, x [m]", fontsize=10)
     plt.ylabel("Pressure altitude, h [m]", fontsize=10)
@@ -162,7 +161,6 @@ for star_name, wps in STAR_CONSTRAINTS.items():
     # Dimensionamiento holgado de márgenes absolutos
     plt.subplots_adjust(left=0.08, right=0.75, top=0.92, bottom=0.1)
     
-    # BARRERA BLOQUEANTE: Muestra la pantalla actual y retiene el bucle hasta su cierre
     plt.show()
     
     fig_num += 1

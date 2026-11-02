@@ -127,7 +127,7 @@ def getCDO(aircraft_model, MLW_percent, initial_h_ft=6000.0):
         x_current -= v_hor * delta_t     
         t_current -= delta_t             
         
-        # Consumo inverso de masa de combustible (BADA 3.10)
+        # Consumo inverso de masa de combustible
         v_kt = v_ms / 0.514444           
         T_desc_kN = T_desc / 1000.0      
         eta = (params['CF1'] / 60.0) * (1.0 + (v_kt / params['CF2'])) 
@@ -206,7 +206,6 @@ def h_at_waypoints():
             idx9 = min(range(len(pos_x_a320_80)), key=lambda j: abs(pos_x_a320_80[j] - target))
             idx10 = min(range(len(pos_x_a319_80)), key=lambda j: abs(pos_x_a319_80[j] - target))
             
-            # Escritura limpia incluyendo metadatos de los puntos
             f.write(f"{wp_names[i]},{target:.2f},"
                     f"{h_767[idx1]:.4f},{h_777[idx2]:.4f},{h_737[idx3]:.4f},{h_a320[idx4]:.4f},{h_a319[idx5]:.4f},"
                     f"{h_767_80[idx6]:.4f},{h_777_80[idx7]:.4f},{h_737_80[idx8]:.4f},{h_a320_80[idx9]:.4f},{h_a319_80[idx10]:.4f}\n")
@@ -296,7 +295,6 @@ def generate_scenario_2_csv():
     # Ordenamos la flota siguiendo la secuencia descubierta en el Escenario 1
     sorted_fleet = sorted(fleet_data, key=lambda x: x['toa_iaf_scen1'])
     
-    # ALGORITMO DE ESPACIADO FIJO EXACTO (Cadena secuencial rígida)
     with open("scenario_2.csv", "w") as f:
         f.write("Aircraft model,STAR,Weight at IAF,ToA IAF Scenario 2,Applied delay [s],ToA STAR entry WP Scenario 2\n")
         
